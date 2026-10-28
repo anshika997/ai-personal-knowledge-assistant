@@ -1,0 +1,40 @@
+services:
+  # ---------- Backend (FastAPI) ----------
+  - type: web
+    name: knowledge-assistant-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    # CPU-only PyTorch first (much smaller), then the other packages
+    buildCommand: pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: DATABASE_URL
+        sync: false          # you type this value in the Render dashboard
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: TOKENIZERS_PARALLELISM
+        value: "false"       # saves a little memory
+      - key: OMP_NUM_THREADS
+        value: "1"
+
+  # ---------- Frontend (Streamlit) ----------
+  - type: web
+    name: knowledge-assistant-ui
+    runtime: python
+    plan: free
+    rootDir: frontend
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: API_URL
+        sync: false          # the backend URL, added after the backend is live
