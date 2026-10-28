@@ -1,7 +1,5 @@
 import logging
 
-from sentence_transformers import SentenceTransformer
-
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -9,10 +7,14 @@ logger = logging.getLogger(__name__)
 _model = None
 
 
-def get_model() -> SentenceTransformer:
+def get_model():
     """Load the model one time and reuse it."""
     global _model
     if _model is None:
+        # Imported here (not at the top) so the server starts with little memory.
+        # PyTorch is loaded only when the first upload or question happens.
+        from sentence_transformers import SentenceTransformer
+
         logger.info("Loading embedding model: %s", settings.EMBEDDING_MODEL)
         _model = SentenceTransformer(settings.EMBEDDING_MODEL)
         size = _model.get_sentence_embedding_dimension()
